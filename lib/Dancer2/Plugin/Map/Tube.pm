@@ -32,11 +32,7 @@ use Dancer2::Plugin;
 register api => sub {
     my ($dsl, $map_name) = @_;
 
-    print STDERR "MAP NAME [$map_name]\n";
-    my $api = Dancer2::Plugin::Map::Tube::API->new({ map_name => $map_name });
-    #print STDERR Dumper($api), "APIIIIIIIIIIIIIIIIIIIIII\n";
-    return $api;
-    #return Dancer2::Plugin::Map::Tube::API->new({ map_name => $map_name });
+    return Dancer2::Plugin::Map::Tube::API->new({ map_name => $map_name });
 };
 
 register_plugin;
