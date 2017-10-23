@@ -1,11 +1,11 @@
-package Dancer2::Plugin::Map::Tube;
+package Dancer2::Plugin::Map::Tube::Error;
 
-$Dancer2::Plugin::Map::Tube::VERSION   = '0.01';
-$Dancer2::Plugin::Map::Tube::AUTHORITY = 'cpan:MANWAR';
+$Dancer2::Plugin::Map::Tube::Error::VERSION   = '0.01';
+$Dancer2::Plugin::Map::Tube::Error::AUTHORITY = 'cpan:MANWAR';
 
 =head1 NAME
 
-Dancer2::Plugin::Map::Tube - Dancer2 add-on for Map::Tube.
+Dancer2::Plugin::Map::Tube::Error - Error codes for Map::Tube API.
 
 =head1 VERSION
 
@@ -15,106 +15,35 @@ Version 0.01
 
 use 5.006;
 use strict; use warnings;
-use Data::Dumper;
+use parent 'Exporter';
 
-use Dancer2::Plugin::Map::Tube::API;
-use Dancer2::Plugin;
+our @EXPORT = qw(
+    $BREACHED_THRESHOLD
+    $MISSING_MAP_NAME
+    $UNSUPPORTED_MAP
+);
 
 =head1 DESCRIPTION
 
-It provides the REST API features for L<Map::Tube::Server>.It holds the supported
-map informations.
+=head1 ERROR CODES
 
-Currently users are allowed to make 30 api calls per minute.Other than that there
-are no restrictions for now. In future, we would restrict it by API KEY.
-
-Please be gentle as it's running on little Raspberry PI box sitting in the corner
-of my bedroom.
-
-=head1 SYNOPSIS
-
-    post '/map-tube/v1/shortest-route' => sub {
-        my $client   = request->address;
-        my $name     = body_parameters->get('map');
-        my $start    = body_parameters->get('start');
-        my $end      = body_parameters->get('end');
-        my $response = api($name)->shortest_route($client, $start, $end);
-
-        ...
-        ...
-
-        return $response->{content};
-    };
-
-    get '/map-tube/v1/stations/:map/:line' => sub {
-        my $client   = request->address;
-        my $name     = route_parameters->get('map');
-        my $line     = route_parameters->get('line');
-
-        my $response = api($name)->line_stations($client, $line);
-
-        ...
-        ...
-
-        return $response->{content};
-    };
-
-    get '/map-tube/v1/stations/:map' => sub {
-        my $client   = request->address;
-        my $name     = route_parameters->get('map');
-        my $response = api($name)->map_stations($client);
-
-        ...
-        ...
-
-        return $response->{content};
-    };
-
-    get '/map-tube/v1/maps' => sub {
-        my $client   = request->address;
-        my $response = api->available_maps($client);
-
-        ...
-        ...
-
-        return $response->{content};
-    };
-
-=head1 METHODS
-
-=head2 api($map_name)
-
-Returns an object of type L<Dancer2::Plugin::Map::Tube::API>.The C<$map_name> can
-be one of the followings:
-
-=over 2
-
-=item London
-
-=item Barcelona
-
-=item Delhi
-
-=item Kolkatta
-
-=back
+    +--------+------------------------------------------------------------------+
+    |  Code  | Description                                                      |
+    +--------+------------------------------------------------------------------+
+    |        |                                                                  |
+    |  401   | Breached threshold limit.                                        |
+    |        |                                                                  |
+    |  402   | Missing map name.                                                |
+    |        |                                                                  |
+    |  403   | Unsupported map.                                                 |
+    |        |                                                                  |
+    +--------+------------------------------------------------------------------+
 
 =cut
 
-register api => sub {
-    my ($dsl, $map_name) = @_;
-
-    my $params = { map_name => $map_name };
-    my $conf = plugin_setting();
-    if (exists $conf->{available_maps}) {
-        my $maps = $conf->{available_maps};
-        $params->{maps} = $maps if (scalar(@$maps));
-    }
-
-    return Dancer2::Plugin::Map::Tube::API->new($params);
-};
-
-register_plugin;
+our $BREACHED_THRESHOLD = 401;
+our $MISSING_MAP_NAME   = 402;
+our $UNSUPPORTED_MAP    = 403;
 
 =head1 AUTHOR
 
@@ -135,7 +64,7 @@ bug as I make changes.
 
 You can find documentation for this module with the perldoc command.
 
-    perldoc Dancer2::Plugin::Map::Tube
+    perldoc Dancer2::Plugin::Map::Tube::Error
 
 You can also look for information at:
 
@@ -199,4 +128,4 @@ OF THE PACKAGE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 =cut
 
-1; # End of Dancer2::Plugin::Map::Tube
+1; # End of Dancer2::Plugin::Map::Tube::Error

@@ -1,6 +1,7 @@
 Changes
 lib/Dancer2/Plugin/Map/Tube.pm
 lib/Dancer2/Plugin/Map/Tube/API.pm
+lib/Dancer2/Plugin/Map/Tube/Error.pm
 Makefile.PL
 LICENSE
 MANIFEST

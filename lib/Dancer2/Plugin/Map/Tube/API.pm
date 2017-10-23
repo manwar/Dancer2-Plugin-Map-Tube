@@ -17,6 +17,7 @@ use 5.006;
 use JSON;
 use Data::Dumper;
 use Cache::Memcached::Fast;
+use Dancer2::Plugin::Map::Tube::Error;
 
 use Map::Tube::Delhi;
 use Map::Tube::London;
@@ -26,7 +27,11 @@ use Map::Tube::Barcelona;
 use Moo;
 use namespace::clean;
 
-our $SUPPORTED_MAPS = {
+our $REQUEST_PERIOD    = 60;
+our $REQUEST_THRESHOLD = 30; # API calls limit.
+our $MEMCACHE_HOST     = 'localhost';
+our $MEMCACHE_PORT     = 11211;
+our $SUPPORTED_MAPS    = {
     'London'    => Map::Tube::London->new,
     'Delhi'     => Map::Tube::Delhi->new,
     'Kolkatta'  => Map::Tube::Kolkatta->new,
@@ -34,15 +39,22 @@ our $SUPPORTED_MAPS = {
 };
 
 has 'map_name'          => (is => 'ro');
-has 'supported_maps'    => (is => 'ro', default => sub { $SUPPORTED_MAPS });
-has 'request_period'    => (is => 'ro', default => sub { 60 });
-has 'request_threshold' => (is => 'ro', default => sub { 30 });
-has 'memcache_host'     => (is => 'ro', default => sub { 'localhost' });
-has 'memcache_port'     => (is => 'ro', default => sub { 11211       });
+has 'maps'              => (is => 'ro', default => sub { [ keys %$SUPPORTED_MAPS ] });
+has 'supported_maps'    => (is => 'ro', default => sub { $SUPPORTED_MAPS           });
+has 'request_period'    => (is => 'ro', default => sub { $REQUEST_PERIOD           });
+has 'request_threshold' => (is => 'ro', default => sub { $REQUEST_THRESHOLD        });
+has 'memcache_host'     => (is => 'ro', default => sub { $MEMCACHE_HOST            });
+has 'memcache_port'     => (is => 'ro', default => sub { $MEMCACHE_PORT            });
 has 'memcached'         => (is => 'rw');
 has 'map_object'        => (is => 'rw');
 
 =head1 DESCRIPTION
+
+It is the backbone for L<Map::Tube::Server> and provides the core functionalities
+for the REST API.
+
+This is  part of Dancer2 plugin L<Dancer2::Plugin::Map::Tube> distribution, which
+makes most of work for L<Map::Tube::Server>.
 
 =cut
 
@@ -58,21 +70,23 @@ sub BUILD {
 
 =head2 shortest_route($client_ip, $start, $end)
 
+Returns ordered list of stations for the shortest route from C<$start> to C<$end>.
+
 =cut
 
 sub shortest_route {
     my ($self, $client_ip, $start, $end) = @_;
 
-    return { error_code    => 401,
+    return { error_code    => $BREACHED_THRESHOLD,
              error_message => 'You have reached the threshold, please try later.'
     } unless $self->_is_authorized($client_ip);
 
     my $map_name = $self->{map_name};
-    return { error_code    => 402,
+    return { error_code    => $MISSING_MAP_NAME,
              error_message => 'Missing map name.'
     } unless (defined $map_name);
 
-    return { error_code    => 403,
+    return { error_code    => $UNSUPPORTED_MAP,
              error_message => "Unsupported map [$map_name]."
     } unless (defined $self->{map_object});
 
@@ -84,21 +98,23 @@ sub shortest_route {
 
 =head2 line_stations($client_ip, $line)
 
+Returns the list of stations, indexed if it is available, in the given C<$line>.
+
 =cut
 
 sub line_stations {
     my ($self, $client_ip, $line) = @_;
 
-    return { error_code    => 401,
+    return { error_code    => $BREACHED_THRESHOLD,
              error_message => 'You have reached the threshold, please try later.'
     } unless $self->_is_authorized($client_ip);
 
     my $map_name = $self->{map_name};
-    return { error_code    => 402,
+    return { error_code    => $MISSING_MAP_NAME,
              error_message => 'Missing map name.'
     } unless (defined $map_name);
 
-    return { error_code    => 403,
+    return { error_code    => $UNSUPPORTED_MAP,
              error_message => "Unsupported map [$map_name]."
     } unless (defined $self->{map_object});
 
@@ -110,21 +126,23 @@ sub line_stations {
 
 =head2 map_stations($client_ip)
 
+Returns ordered list of stations in the map.
+
 =cut
 
 sub map_stations {
     my ($self, $client_ip) = @_;
 
-    return { error_code    => 401,
+    return { error_code    => $BREACHED_THRESHOLD,
              error_message => 'You have reached the threshold, please try later.'
     } unless $self->_is_authorized($client_ip);
 
     my $map_name = $self->{map_name};
-    return { error_code    => 402,
+    return { error_code    => $MISSING_MAP_NAME,
              error_message => 'Missing map name.'
     } unless (defined $map_name);
 
-    return { error_code    => 403,
+    return { error_code    => $UNSUPPORTED_MAP,
              error_message => "Unsupported map [$map_name]."
     } unless (defined $self->{map_object});
 
@@ -142,16 +160,18 @@ sub map_stations {
 
 =head2 available_maps($client)
 
+Returns ordered list of available maps.
+
 =cut
 
 sub available_maps {
     my ($self, $client_ip) = @_;
 
-    return { error_code    => 401,
+    return { error_code    => $BREACHED_THRESHOLD,
              error_message => 'You have reached the threshold, please try later.'
     } unless $self->_is_authorized($client_ip);
 
-    my $maps = [ join(", ", sort keys %{$self->{supported_maps}}) ];
+    my $maps = [ sort @{$self->{maps}} ];
 
     return _jsonified_content($maps);
 };
