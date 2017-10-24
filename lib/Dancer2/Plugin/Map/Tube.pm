@@ -105,7 +105,7 @@ register api => sub {
     my ($dsl, $map_name) = @_;
 
     my $params = { map_name => $map_name };
-    my $conf = plugin_setting();
+    my $conf   = plugin_setting();
     if (exists $conf->{available_maps}) {
         my $maps = $conf->{available_maps};
         $params->{maps} = $maps if (scalar(@$maps));
