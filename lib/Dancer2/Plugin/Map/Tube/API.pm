@@ -28,8 +28,8 @@ use Module::Pluggable
 use Moo;
 use namespace::clean;
 
-our $REQUEST_PERIOD    = 60;
-our $REQUEST_THRESHOLD = 30; # API calls limit.
+our $REQUEST_PERIOD    = 60; # seconds.
+our $REQUEST_THRESHOLD = 30; # API calls limit per minute.
 our $MEMCACHE_HOST     = 'localhost';
 our $MEMCACHE_PORT     = 11211;
 our $SUPPORTED_MAPS    = [qw/
@@ -43,6 +43,7 @@ our $SUPPORTED_MAPS    = [qw/
 
 has 'map_name'          => (is => 'ro');
 has 'user_maps'         => (is => 'rw');
+has 'user_error'        => (is => 'rw');
 has 'installed_maps'    => (is => 'rw');
 has 'map_names'         => (is => 'rw');
 has 'supported_maps'    => (is => 'ro', default => sub { { map { $_ => 1 } @$SUPPORTED_MAPS } });
@@ -93,13 +94,19 @@ sub BUILD {
     my $map_name = $self->map_name;
     if (defined $map_name) {
         unless (exists $self->{map_names}->{lc($map_name)}) {
-            # TODO: Throw exception invalid map name.
-            die "ERROR: Invalid map name [$map_name]\n";
+            $self->{user_error} =  {
+                error_code    => $BAD_REQUEST,
+                error_message => $RECEIVED_INVALID_MAP_NAME,
+            };
+            return;
         }
 
         unless (exists $self->{installed_maps}->{$self->{map_names}->{lc($map_name)}}) {
-            # TODO: Throw exception for map not installed.
-            die "ERROR: Map [$map_name] not installed.\n";
+            $self->{user_error} = {
+                error_code    => $BAD_REQUEST,
+                error_message => $MAP_NOT_INSTALLED,
+            };
+            return;
         }
 
         $self->{map_object} = $self->{installed_maps}->{$self->{map_names}->{lc($map_name)}};
@@ -117,17 +124,17 @@ Returns ordered list of stations for the shortest route from C<$start> to C<$end
 sub shortest_route {
     my ($self, $client_ip, $start, $end) = @_;
 
-    return { error_code    => $BREACHED_THRESHOLD,
-             error_message => 'You have reached the threshold, please try later.'
+    return { error_code    => $TOO_MANY_REQUEST,
+             error_message => $REACHED_REQUEST_LIMIT,
     } unless $self->_is_authorized($client_ip);
 
     my $map_name = $self->{map_name};
-    return { error_code    => $MISSING_MAP_NAME,
-             error_message => 'Missing map name.'
+    return { error_code    => $BAD_REQUEST,
+             error_message => $MISSING_MAP_NAME,
     } unless (defined $map_name);
 
-    return { error_code    => $UNSUPPORTED_MAP,
-             error_message => "Unsupported map [$map_name]."
+    return { error_code    => $BAD_REQUEST,
+             error_message => $RECEIVED_UNSUPPORTED_MAP_NAME,
     } unless (defined $self->{map_object});
 
     my $route    = $self->map_object->get_shortest_route($start, $end);
@@ -145,17 +152,19 @@ Returns the list of stations, indexed if it is available, in the given C<$line>.
 sub line_stations {
     my ($self, $client_ip, $line) = @_;
 
-    return { error_code    => $BREACHED_THRESHOLD,
-             error_message => 'You have reached the threshold, please try later.'
+    return { error_code    => $TOO_MANY_REQUEST,
+             error_message => $REACHED_REQUEST_LIMIT,
     } unless $self->_is_authorized($client_ip);
 
+    return $self->{user_error} if (defined $self->{user_error});
+
     my $map_name = $self->{map_name};
-    return { error_code    => $MISSING_MAP_NAME,
-             error_message => 'Missing map name.'
+    return { error_code    => $BAD_REQUEST,
+             error_message => $MISSING_MAP_NAME,
     } unless (defined $map_name);
 
-    return { error_code    => $UNSUPPORTED_MAP,
-             error_message => "Unsupported map [$map_name]."
+    return { error_code    => $BAD_REQUEST,
+             error_message => $RECEIVED_UNSUPPORTED_MAP_NAME,
     } unless (defined $self->{map_object});
 
     my $object   = $self->map_object;
@@ -173,17 +182,19 @@ Returns ordered list of stations in the map.
 sub map_stations {
     my ($self, $client_ip) = @_;
 
-    return { error_code    => $BREACHED_THRESHOLD,
-             error_message => 'You have reached the threshold, please try later.'
+    return { error_code    => $TOO_MANY_REQUEST,
+             error_message => $REACHED_REQUEST_LIMIT,
     } unless $self->_is_authorized($client_ip);
 
+    return $self->{user_error} if (defined $self->{user_error});
+
     my $map_name = $self->{map_name};
-    return { error_code    => $MISSING_MAP_NAME,
-             error_message => 'Missing map name.'
+    return { error_code    => $BAD_REQUEST,
+             error_message => $MISSING_MAP_NAME,
     } unless (defined $map_name);
 
-    return { error_code    => $UNSUPPORTED_MAP,
-             error_message => "Unsupported map [$map_name]."
+    return { error_code    => $BAD_REQUEST,
+             error_message => $RECEIVED_UNSUPPORTED_MAP_NAME,
     } unless (defined $self->{map_object});
 
     my $object   = $self->map_object;
@@ -207,8 +218,8 @@ Returns ordered list of available maps.
 sub available_maps {
     my ($self, $client_ip) = @_;
 
-    return { error_code    => $BREACHED_THRESHOLD,
-             error_message => 'You have reached the threshold, please try later.'
+    return { error_code    => $TOO_MANY_REQUEST,
+             error_message => $REACHED_REQUEST_LIMIT,
     } unless $self->_is_authorized($client_ip);
 
     my $maps = [ sort keys %{$self->{installed_maps}} ];

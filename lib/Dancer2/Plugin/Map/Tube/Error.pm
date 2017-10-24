@@ -18,32 +18,44 @@ use strict; use warnings;
 use parent 'Exporter';
 
 our @EXPORT = qw(
-    $BREACHED_THRESHOLD
+    $BAD_REQUEST
+    $TOO_MANY_REQUEST
+
+    $REACHED_REQUEST_LIMIT
     $MISSING_MAP_NAME
-    $UNSUPPORTED_MAP
+    $RECEIVED_INVALID_MAP_NAME
+    $RECEIVED_UNSUPPORTED_MAP_NAME
+    $MAP_NOT_INSTALLED
 );
 
 =head1 DESCRIPTION
 
-=head1 ERROR CODES
+=head1 ERROR MESSAGE
 
-    +--------+------------------------------------------------------------------+
-    |  Code  | Description                                                      |
-    +--------+------------------------------------------------------------------+
-    |        |                                                                  |
-    |  401   | Breached threshold limit.                                        |
-    |        |                                                                  |
-    |  402   | Missing map name.                                                |
-    |        |                                                                  |
-    |  403   | Unsupported map.                                                 |
-    |        |                                                                  |
-    +--------+------------------------------------------------------------------+
+=over 2
+
+=item REACHED REQUEST LIMIT
+
+=item MISSING MAP NAME
+
+=item RECEIVED INVALID MAP NAME
+
+=item RECEIVED UNSUPPORTED MAP NAME
+
+=item MAP NOT INSTALLED
+
+=back
 
 =cut
 
-our $BREACHED_THRESHOLD = 401;
-our $MISSING_MAP_NAME   = 402;
-our $UNSUPPORTED_MAP    = 403;
+our $BAD_REQUEST      = 400;
+our $TOO_MANY_REQUEST = 429;
+
+our $REACHED_REQUEST_LIMIT         = 'Reached request limit.';
+our $MISSING_MAP_NAME              = 'Missing map name.';
+our $RECEIVED_INVALID_MAP_NAME     = 'Received invalid map name.';
+our $RECEIVED_UNSUPPORTED_MAP_NAME = 'Received unsupported map name.';
+our $MAP_NOT_INSTALLED             = 'Map not installed';
 
 =head1 AUTHOR
 
