@@ -19,10 +19,11 @@ use Data::Dumper;
 use Cache::Memcached::Fast;
 use Dancer2::Plugin::Map::Tube::Error;
 
-use Map::Tube::Delhi;
-use Map::Tube::London;
-use Map::Tube::Kolkatta;
-use Map::Tube::Barcelona;
+use Module::Pluggable
+    search_path => [ 'Map::Tube' ],
+    require     => 1,
+    inner       => 0,
+    max_depth   => 3;
 
 use Moo;
 use namespace::clean;
@@ -31,20 +32,24 @@ our $REQUEST_PERIOD    = 60;
 our $REQUEST_THRESHOLD = 30; # API calls limit.
 our $MEMCACHE_HOST     = 'localhost';
 our $MEMCACHE_PORT     = 11211;
-our $SUPPORTED_MAPS    = {
-    'London'    => Map::Tube::London->new,
-    'Delhi'     => Map::Tube::Delhi->new,
-    'Kolkatta'  => Map::Tube::Kolkatta->new,
-    'Barcelona' => Map::Tube::Barcelona->new,
-};
+our $SUPPORTED_MAPS    = [qw/
+    Barcelona      Beijing         Berlin   Bucharest       Budapest
+    Delhi          Dnipropetrovsk  Glasgow  Kazan           Kharkiv
+    Kiev           KoelnBonn       Kolkatta KualaLumpur     London
+    Lyon           Malaga          Minsk    Moscow          Nanjing
+    NizhnyNovgorod Novosibirsk     Prague   SaintPetersburg Samara
+    Singapore      Sofia           Tbilisi  Vienna          Warsaw
+    Yekaterinburg/];
 
 has 'map_name'          => (is => 'ro');
-has 'maps'              => (is => 'ro', default => sub { [ keys %$SUPPORTED_MAPS ] });
-has 'supported_maps'    => (is => 'ro', default => sub { $SUPPORTED_MAPS           });
-has 'request_period'    => (is => 'ro', default => sub { $REQUEST_PERIOD           });
-has 'request_threshold' => (is => 'ro', default => sub { $REQUEST_THRESHOLD        });
-has 'memcache_host'     => (is => 'ro', default => sub { $MEMCACHE_HOST            });
-has 'memcache_port'     => (is => 'ro', default => sub { $MEMCACHE_PORT            });
+has 'user_maps'         => (is => 'rw');
+has 'installed_maps'    => (is => 'rw');
+has 'map_names'         => (is => 'rw');
+has 'supported_maps'    => (is => 'ro', default => sub { { map { $_ => 1 } @$SUPPORTED_MAPS } });
+has 'request_period'    => (is => 'ro', default => sub { $REQUEST_PERIOD    });
+has 'request_threshold' => (is => 'ro', default => sub { $REQUEST_THRESHOLD });
+has 'memcache_host'     => (is => 'ro', default => sub { $MEMCACHE_HOST     });
+has 'memcache_port'     => (is => 'ro', default => sub { $MEMCACHE_PORT     });
 has 'memcached'         => (is => 'rw');
 has 'map_object'        => (is => 'rw');
 
@@ -62,8 +67,43 @@ sub BUILD {
     my ($self, $arg) = @_;
 
     my $address = sprintf("%s:%d", $self->memcache_host, $self->memcache_port);
-    $self->{memcached}  = Cache::Memcached::Fast->new({ servers => [{ address => $address }] });
-    $self->{map_object} = _get_map_object($self->map_name);
+    $self->{memcached} = Cache::Memcached::Fast->new({ servers => [{ address => $address }] });
+    $self->{map_names} = { map { lc($_) => $_ } @$SUPPORTED_MAPS };
+
+    # If user has provided list of maps then make only those available.
+    my $user_maps = {};
+    if (defined $arg->{user_maps}) {
+        $user_maps = {
+            map {
+                'Map::Tube::'. $self->{map_names}->{lc($_)} => 1
+            }
+            @{$arg->{user_maps}}
+        };
+    }
+
+    my $plugins = [ plugins ];
+    my $maps    = { map { 'Map::Tube::'.$_ => $_ } @$SUPPORTED_MAPS };
+    foreach my $plugin (@$plugins) {
+        next unless (exists $maps->{$plugin});
+        next if (scalar(keys %$user_maps) && !exists $user_maps->{$plugin});
+
+        $self->{installed_maps}->{$maps->{$plugin}} = $plugin->new;
+    }
+
+    my $map_name = $self->map_name;
+    if (defined $map_name) {
+        unless (exists $self->{map_names}->{lc($map_name)}) {
+            # TODO: Throw exception invalid map name.
+            die "ERROR: Invalid map name [$map_name]\n";
+        }
+
+        unless (exists $self->{installed_maps}->{$self->{map_names}->{lc($map_name)}}) {
+            # TODO: Throw exception for map not installed.
+            die "ERROR: Map [$map_name] not installed.\n";
+        }
+
+        $self->{map_object} = $self->{installed_maps}->{$self->{map_names}->{lc($map_name)}};
+    }
 }
 
 =head1 METHODS
@@ -171,7 +211,7 @@ sub available_maps {
              error_message => 'You have reached the threshold, please try later.'
     } unless $self->_is_authorized($client_ip);
 
-    my $maps = [ sort @{$self->{maps}} ];
+    my $maps = [ sort keys %{$self->{installed_maps}} ];
 
     return _jsonified_content($maps);
 };
@@ -225,26 +265,6 @@ sub _is_authorized {
     }
 
     return 1;
-}
-
-sub _get_map_object {
-    my ($map) = @_;
-    return unless defined $map;
-
-    if ($map =~ /\s/) {
-        my @parts = split(/\s/, $map);
-        my @map   = ();
-        foreach my $part (@parts) {
-            push @map, ucfirst(lc($part));
-        }
-
-        $map = join(" ", @map);
-    }
-    else {
-        $map = ucfirst(lc($map));
-    }
-
-    return $SUPPORTED_MAPS->{$map};
 }
 
 =head1 AUTHOR

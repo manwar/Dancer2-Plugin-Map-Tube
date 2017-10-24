@@ -106,9 +106,9 @@ register api => sub {
 
     my $params = { map_name => $map_name };
     my $conf   = plugin_setting();
-    if (exists $conf->{available_maps}) {
-        my $maps = $conf->{available_maps};
-        $params->{maps} = $maps if (scalar(@$maps));
+    if (exists $conf->{user_maps}) {
+        my $maps = $conf->{user_maps};
+        $params->{user_maps} = $maps if (scalar(@$maps));
     }
 
     return Dancer2::Plugin::Map::Tube::API->new($params);
