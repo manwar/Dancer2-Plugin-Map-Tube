@@ -22,9 +22,20 @@ our @EXPORT = qw(
     $TOO_MANY_REQUEST
 
     $REACHED_REQUEST_LIMIT
+
     $MISSING_MAP_NAME
     $RECEIVED_INVALID_MAP_NAME
     $RECEIVED_UNSUPPORTED_MAP_NAME
+
+    $MISSING_START_STATION_NAME
+    $RECEIVED_INVALID_START_STATION_NAME
+
+    $MISSING_END_STATION_NAME
+    $RECEIVED_INVALID_END_STATION_NAME
+
+    $MISSING_LINE_NAME
+    $RECEIVED_INVALID_LINE_NAME
+
     $MAP_NOT_INSTALLED
 );
 
@@ -51,11 +62,17 @@ our @EXPORT = qw(
 our $BAD_REQUEST      = 400;
 our $TOO_MANY_REQUEST = 429;
 
-our $REACHED_REQUEST_LIMIT         = 'Reached request limit.';
-our $MISSING_MAP_NAME              = 'Missing map name.';
-our $RECEIVED_INVALID_MAP_NAME     = 'Received invalid map name.';
-our $RECEIVED_UNSUPPORTED_MAP_NAME = 'Received unsupported map name.';
-our $MAP_NOT_INSTALLED             = 'Map not installed';
+our $REACHED_REQUEST_LIMIT               = 'Reached request limit.';
+our $MISSING_MAP_NAME                    = 'Missing map name.';
+our $RECEIVED_INVALID_MAP_NAME           = 'Received invalid map name.';
+our $RECEIVED_UNSUPPORTED_MAP_NAME       = 'Received unsupported map name.';
+our $MISSING_START_STATION_NAME          = 'Missing start station name.';
+our $RECEIVED_INVALID_START_STATION_NAME = 'Received invalid start station name.';
+our $MISSING_END_STATION_NAME            = 'Missing end station name.';
+our $RECEIVED_INVALID_END_STATION_NAME   = 'Received invalid end station name.';
+our $MISSING_LINE_NAME                   = 'Missing line name.';
+our $RECEIVED_INVALID_LINE_NAME          = 'Received invalid line name.';
+our $MAP_NOT_INSTALLED                   = 'Map not installed';
 
 =head1 AUTHOR
 

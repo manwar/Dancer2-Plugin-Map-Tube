@@ -131,13 +131,32 @@ sub shortest_route {
     my $map_name = $self->{map_name};
     return { error_code    => $BAD_REQUEST,
              error_message => $MISSING_MAP_NAME,
-    } unless (defined $map_name);
+    } unless (defined $map_name && ($map_name != /^$/));
 
     return { error_code    => $BAD_REQUEST,
-             error_message => $RECEIVED_UNSUPPORTED_MAP_NAME,
-    } unless (defined $self->{map_object});
+             error_message => $MISSING_START_STATION_NAME,
+    } unless (defined $start && ($start !~ /^$/));
 
-    my $route    = $self->map_object->get_shortest_route($start, $end);
+    return { error_code    => $BAD_REQUEST,
+             error_message => $MISSING_END_STATION_NAME,
+    } unless (defined $end && ($end !~ /^$/));
+
+    my $object = $self->map_object;
+    return { error_code    => $BAD_REQUEST,
+             error_message => $RECEIVED_UNSUPPORTED_MAP_NAME,
+    } unless (defined $object);
+
+    eval { $object->get_node_by_name($start) };
+    return { error_code    => $BAD_REQUEST,
+             error_message => $RECEIVED_INVALID_START_STATION_NAME,
+    } if ($@);
+
+    eval { $object->get_node_by_name($end) };
+    return { error_code    => $BAD_REQUEST,
+             error_message => $RECEIVED_INVALID_END_STATION_NAME,
+    } if ($@);
+
+    my $route    = $object->get_shortest_route($start, $end);
     my $stations = [ map { sprintf("%s", $_) } @{$route->nodes} ];
 
     return _jsonified_content($stations);
@@ -150,7 +169,7 @@ Returns the list of stations, indexed if it is available, in the given C<$line>.
 =cut
 
 sub line_stations {
-    my ($self, $client_ip, $line) = @_;
+    my ($self, $client_ip, $line_name) = @_;
 
     return { error_code    => $TOO_MANY_REQUEST,
              error_message => $REACHED_REQUEST_LIMIT,
@@ -161,14 +180,23 @@ sub line_stations {
     my $map_name = $self->{map_name};
     return { error_code    => $BAD_REQUEST,
              error_message => $MISSING_MAP_NAME,
-    } unless (defined $map_name);
+    } unless (defined $map_name && ($map_name !~ /^$/));
 
     return { error_code    => $BAD_REQUEST,
-             error_message => $RECEIVED_UNSUPPORTED_MAP_NAME,
-    } unless (defined $self->{map_object});
+             error_message => $MISSING_LINE_NAME,
+    } unless (defined $line_name && ($line_name !~ /^$/));
 
-    my $object   = $self->map_object;
-    my $stations = $object->get_stations($object->get_line_by_id($line)->name);
+    my $object = $self->map_object;
+    return { error_code    => $BAD_REQUEST,
+             error_message => $RECEIVED_UNSUPPORTED_MAP_NAME,
+    } unless (defined $object);
+
+    eval { $object->get_line_by_name($line_name) };
+    return { error_code    => $BAD_REQUEST,
+             error_message => $RECEIVED_INVALID_LINE_NAME,
+    } if ($@);
+
+    my $stations = $object->get_stations($line_name);
 
     return _jsonified_content([ map { sprintf("%s", $_) } @{$stations} ]);
 };
@@ -191,13 +219,13 @@ sub map_stations {
     my $map_name = $self->{map_name};
     return { error_code    => $BAD_REQUEST,
              error_message => $MISSING_MAP_NAME,
-    } unless (defined $map_name);
+    } unless (defined $map_name && ($map_name !~ /^$/));
 
+    my $object = $self->map_object;
     return { error_code    => $BAD_REQUEST,
              error_message => $RECEIVED_UNSUPPORTED_MAP_NAME,
-    } unless (defined $self->{map_object});
+    } unless (defined $object);
 
-    my $object   = $self->map_object;
     my $lines    = $object->get_lines;
     my $stations = {};
     foreach my $line (@$lines) {
