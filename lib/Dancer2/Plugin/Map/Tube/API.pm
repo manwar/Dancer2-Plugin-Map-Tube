@@ -131,7 +131,7 @@ sub shortest_route {
     my $map_name = $self->{map_name};
     return { error_code    => $BAD_REQUEST,
              error_message => $MISSING_MAP_NAME,
-    } unless (defined $map_name && ($map_name != /^$/));
+    } unless (defined $map_name && ($map_name !~ /^$/));
 
     return { error_code    => $BAD_REQUEST,
              error_message => $MISSING_START_STATION_NAME,
