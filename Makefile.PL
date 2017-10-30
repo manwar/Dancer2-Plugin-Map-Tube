@@ -23,7 +23,7 @@ WriteMakefile(
         'Dancer2::Plugin'        => '0.159002',
         'JSON'                   => '2.90',
         'Moo'                    => '2.000000',
-        'namespace::clean'       => '0.24',
+        'namespace::autoclean'   => '0.28',
         'Cache::Memcached::Fast' => '0.25',
         'Module::Pluggable'      => '5.1',
     },

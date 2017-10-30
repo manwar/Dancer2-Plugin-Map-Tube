@@ -26,7 +26,7 @@ use Module::Pluggable
     max_depth   => 3;
 
 use Moo;
-use namespace::clean;
+use namespace::autoclean;
 
 our $REQUEST_PERIOD    = 60; # seconds.
 our $REQUEST_THRESHOLD = 30; # API calls limit per minute.
