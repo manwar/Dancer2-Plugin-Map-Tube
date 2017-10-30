@@ -19,34 +19,20 @@ use Data::Dumper;
 use Cache::Memcached::Fast;
 use Dancer2::Plugin::Map::Tube::Error;
 
-use Module::Pluggable
-    search_path => [ 'Map::Tube' ],
-    require     => 1,
-    inner       => 0,
-    max_depth   => 3;
-
 use Moo;
 use namespace::autoclean;
 
 our $REQUEST_PERIOD    = 60; # seconds.
-our $REQUEST_THRESHOLD = 30; # API calls limit per minute.
+our $REQUEST_THRESHOLD = 6;  # API calls limit per minute.
 our $MEMCACHE_HOST     = 'localhost';
 our $MEMCACHE_PORT     = 11211;
-our $SUPPORTED_MAPS    = [qw/
-    Barcelona      Beijing         Berlin   Bucharest       Budapest
-    Delhi          Dnipropetrovsk  Glasgow  Kazan           Kharkiv
-    Kiev           KoelnBonn       Kolkatta KualaLumpur     London
-    Lyon           Malaga          Minsk    Moscow          Nanjing
-    NizhnyNovgorod Novosibirsk     Prague   SaintPetersburg Samara
-    Singapore      Sofia           Tbilisi  Vienna          Warsaw
-    Yekaterinburg/];
 
 has 'map_name'          => (is => 'ro');
 has 'user_maps'         => (is => 'rw');
 has 'user_error'        => (is => 'rw');
-has 'installed_maps'    => (is => 'rw');
-has 'map_names'         => (is => 'rw');
-has 'supported_maps'    => (is => 'ro', default => sub { { map { $_ => 1 } @$SUPPORTED_MAPS } });
+has 'installed_maps'    => (is => 'ro');
+has 'map_names'         => (is => 'ro');
+has 'supported_maps'    => (is => 'ro');
 has 'request_period'    => (is => 'ro', default => sub { $REQUEST_PERIOD    });
 has 'request_threshold' => (is => 'ro', default => sub { $REQUEST_THRESHOLD });
 has 'memcache_host'     => (is => 'ro', default => sub { $MEMCACHE_HOST     });
@@ -69,27 +55,6 @@ sub BUILD {
 
     my $address = sprintf("%s:%d", $self->memcache_host, $self->memcache_port);
     $self->{memcached} = Cache::Memcached::Fast->new({ servers => [{ address => $address }] });
-    $self->{map_names} = { map { lc($_) => $_ } @$SUPPORTED_MAPS };
-
-    # If user has provided list of maps then make only those available.
-    my $user_maps = {};
-    if (defined $arg->{user_maps}) {
-        $user_maps = {
-            map {
-                'Map::Tube::'. $self->{map_names}->{lc($_)} => 1
-            }
-            @{$arg->{user_maps}}
-        };
-    }
-
-    my $plugins = [ plugins ];
-    my $maps    = { map { 'Map::Tube::'.$_ => $_ } @$SUPPORTED_MAPS };
-    foreach my $plugin (@$plugins) {
-        next unless (exists $maps->{$plugin});
-        next if (scalar(keys %$user_maps) && !exists $user_maps->{$plugin});
-
-        $self->{installed_maps}->{$maps->{$plugin}} = $plugin->new;
-    }
 
     my $map_name = $self->map_name;
     if (defined $map_name) {

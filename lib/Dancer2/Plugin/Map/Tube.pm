@@ -17,6 +17,7 @@ use 5.006;
 use strict; use warnings;
 use Data::Dumper;
 
+use Class::Load qw(try_load_class);
 use Dancer2::Plugin::Map::Tube::API;
 use Dancer2::Plugin;
 
@@ -25,7 +26,7 @@ use Dancer2::Plugin;
 It provides the REST API features for L<Map::Tube::Server>.It holds the supported
 map informations.
 
-Currently users are allowed to make 30 api calls per minute.Other than that there
+Currently users are allowed to make 6 api calls per minute. Other than that there
 are no restrictions for now. In future, we would restrict it by API KEY.
 
 Please be gentle as it's running on little Raspberry PI box sitting in the corner
@@ -89,17 +90,29 @@ be one of the followings:
 
 =over 2
 
-=item London
-
 =item Barcelona
+
+=item Berlin
 
 =item Delhi
 
 =item Kolkatta
 
+=item London
+
 =back
 
 =cut
+
+our $INSTALLED_MAPS;
+our $SUPPORTED_MAPS = [qw/
+    Barcelona      Beijing         Berlin   Bucharest       Budapest
+    Delhi          Dnipropetrovsk  Glasgow  Kazan           Kharkiv
+    Kiev           KoelnBonn       Kolkatta KualaLumpur     London
+    Lyon           Malaga          Minsk    Moscow          Nanjing
+    NizhnyNovgorod Novosibirsk     Prague   SaintPetersburg Samara
+    Singapore      Sofia           Tbilisi  Vienna          Warsaw
+    Yekaterinburg/];
 
 register api => sub {
     my ($dsl, $map_name) = @_;
@@ -110,6 +123,36 @@ register api => sub {
         my $maps = $conf->{user_maps};
         $params->{user_maps} = $maps if (scalar(@$maps));
     }
+
+    $params->{supported_maps} = { map { $_ => 1      } @$SUPPORTED_MAPS };
+    $params->{map_names}      = { map { lc($_) => $_ } @$SUPPORTED_MAPS };
+
+    # If user has provided list of maps then make only those available.
+    my $user_maps = {};
+    if (defined $params->{user_maps}) {
+        $user_maps = {
+            map {
+                'Map::Tube::'. $params->{map_names}->{lc($_)} => 1
+            }
+            @{$params->{user_maps}}
+        };
+    }
+
+    if (defined $INSTALLED_MAPS) {
+        print STDERR "Using cached installed maps ...\n";
+    }
+    else {
+        print STDERR "Caching installed maps ...\n";
+        my $maps = { map { 'Map::Tube::'.$_ => $_ } @$SUPPORTED_MAPS };
+        foreach my $map (keys %$maps) {
+            try_load_class($map) or next;
+            next if (scalar(keys %$user_maps) && !exists $user_maps->{$map});
+
+            $INSTALLED_MAPS->{$maps->{$map}} = $map->new;
+        }
+    }
+
+    $params->{installed_maps} = $INSTALLED_MAPS;
 
     return Dancer2::Plugin::Map::Tube::API->new($params);
 };
