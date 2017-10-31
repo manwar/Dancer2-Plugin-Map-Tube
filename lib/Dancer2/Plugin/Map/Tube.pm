@@ -191,10 +191,10 @@ register api => sub {
     }
 
     if (defined $INSTALLED_MAPS) {
-        print STDERR "Using cached installed maps ...\n";
+        print STDERR "Using cached supported maps ...\n";
     }
     else {
-        print STDERR "Caching installed maps ...\n";
+        print STDERR "Caching supported maps ...\n";
         my $maps = { map { 'Map::Tube::'.$_ => $_ } @$SUPPORTED_MAPS };
         foreach my $map (keys %$maps) {
             try_load_class($map) or next;
