@@ -27,10 +27,10 @@ It provides the REST API features for L<Map::Tube::Server>.It holds the supporte
 map informations.
 
 Currently users are allowed to make 6 api calls per minute. Other than that there
-are no restrictions for now. In future, we would restrict it by API KEY.
+are no restrictions for now. In future, we would allow access by API KEY.
 
-Please be gentle as it's running on little Raspberry PI box sitting in the corner
-of my bedroom.
+Please be gentle as it's running on tiny RaspberryPI box sitting in the corner of
+my bedroom.
 
 =head1 SYNOPSIS
 
@@ -86,19 +86,71 @@ of my bedroom.
 =head2 api($map_name)
 
 Returns an object of type L<Dancer2::Plugin::Map::Tube::API>.The C<$map_name> can
-be one of the followings:
+be one of the following supported maps. Please make sure map is installed first.
 
 =over 2
 
 =item Barcelona
 
+=item Beijing
+
 =item Berlin
+
+=item Bucharest
+
+=item Budapest
 
 =item Delhi
 
+=item Dnipropetrovsk
+
+=item Glasgow
+
+=item Kazan
+
+=item Kharkiv
+
+=item Kiev
+
+=item KoelnBonn
+
 =item Kolkatta
 
+=item KualaLumpur
+
 =item London
+
+=item Lyon
+
+=item Malaga
+
+=item Minsk
+
+=item Moscow
+
+=item Nanjing
+
+=item NizhnyNovgorod
+
+=item Novosibirsk
+
+=item Prague
+
+=item SaintPetersburg
+
+=item Samara
+
+=item Singapore
+
+=item Sofia
+
+=item Tbilisi
+
+=item Vienna
+
+=item Warsaw
+
+=item Yekaterinburg
 
 =back
 

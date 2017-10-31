@@ -25,7 +25,7 @@ WriteMakefile(
         'Moo'                    => '2.000000',
         'namespace::autoclean'   => '0.28',
         'Cache::Memcached::Fast' => '0.25',
-        'Module::Pluggable'      => '5.1',
+        'Class::Load'            => '0.22',
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean => { FILES => 'Dancer2-Plugin-Map-Tube-*' },
