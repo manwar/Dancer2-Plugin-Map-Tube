@@ -34,11 +34,12 @@ my bedroom.
 
 =head1 SYNOPSIS
 
-    post '/map-tube/v1/shortest-route' => sub {
+    get '/map-tube/v1/shortest-route/:map/:start/:end' => sub {
         my $client   = request->address;
-        my $name     = body_parameters->get('map');
-        my $start    = body_parameters->get('start');
-        my $end      = body_parameters->get('end');
+        my $name     = route_parameters->get('map');
+        my $start    = route_parameters->get('start');
+        my $end      = route_parameters->get('end');
+
         my $response = api($name)->shortest_route($client, $start, $end);
 
         ...
@@ -190,18 +191,11 @@ register api => sub {
         };
     }
 
-    if (defined $INSTALLED_MAPS) {
-        print STDERR "Using cached supported maps ...\n";
-    }
-    else {
-        print STDERR "Caching supported maps ...\n";
-        my $maps = { map { 'Map::Tube::'.$_ => $_ } @$SUPPORTED_MAPS };
-        foreach my $map (keys %$maps) {
-            try_load_class($map) or next;
-            next if (scalar(keys %$user_maps) && !exists $user_maps->{$map});
-
-            $INSTALLED_MAPS->{$maps->{$map}} = $map->new;
-        }
+    my $maps = { map { 'Map::Tube::'.$_ => $_ } @$SUPPORTED_MAPS };
+    foreach my $map (keys %$maps) {
+        try_load_class($map) or next;
+        next if (scalar(keys %$user_maps) && !exists $user_maps->{$map});
+        $INSTALLED_MAPS->{$maps->{$map}} = $map->new;
     }
 
     $params->{installed_maps} = $INSTALLED_MAPS;
@@ -256,7 +250,7 @@ L<http://search.cpan.org/dist/Dancer2-Plugin-Map-Tube/>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright (C) 2017 Mohammad S Anwar.
+Copyright (C) 2018 Mohammad S Anwar.
 
 This program  is  free software; you can redistribute it and / or modify it under
 the  terms  of the the Artistic License (2.0). You may obtain  a copy of the full
