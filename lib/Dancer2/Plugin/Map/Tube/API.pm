@@ -191,12 +191,9 @@ sub map_stations {
              error_message => $RECEIVED_UNSUPPORTED_MAP_NAME,
     } unless (defined $object);
 
-    my $lines    = $object->get_lines;
     my $stations = {};
-    foreach my $line (@$lines) {
-        foreach my $station (@{$object->get_stations($line->name)}) {
-            $stations->{sprintf("%s", $station)} = 1;
-        }
+    foreach my $station (@{$object->get_stations}) {
+        $stations->{sprintf("%s", $station)} = 1;
     }
 
     return _jsonified_content([ sort keys %$stations ]);
