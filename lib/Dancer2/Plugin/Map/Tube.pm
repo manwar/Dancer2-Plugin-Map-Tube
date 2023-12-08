@@ -97,6 +97,8 @@ be one of the following supported maps. Please make sure map is installed first.
 
 =item Berlin
 
+=item Bielefeld
+
 =item Bucharest
 
 =item Budapest
@@ -159,13 +161,13 @@ be one of the following supported maps. Please make sure map is installed first.
 
 our $INSTALLED_MAPS;
 our $SUPPORTED_MAPS = [qw/
-    Barcelona      Beijing         Berlin   Bucharest       Budapest
-    Delhi          Dnipropetrovsk  Glasgow  Kazan           Kharkiv
-    Kiev           KoelnBonn       Kolkatta KualaLumpur     London
-    Lyon           Malaga          Minsk    Moscow          Nanjing
-    NizhnyNovgorod Novosibirsk     Prague   SaintPetersburg Samara
-    Singapore      Sofia           Tbilisi  Vienna          Warsaw
-    Yekaterinburg/];
+    Barcelona   Beijing         Berlin          Bielefeld  Bucharest
+    Budapest    Delhi           Dnipropetrovsk  Glasgow    Kazan
+    Kharkiv     Kiev            KoelnBonn       Kolkatta   KualaLumpur
+    London      Lyon            Malaga          Minsk      Moscow
+    Nanjing     NizhnyNovgorod  Novosibirsk     Prague     SaintPetersburg
+    Samara      Singapore       Sofia           Tbilisi    Vienna
+    Warsaw      Yekaterinburg/];
 
 register api => sub {
     my ($dsl, $map_name) = @_;
