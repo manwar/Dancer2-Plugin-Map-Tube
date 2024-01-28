@@ -109,6 +109,8 @@ be one of the following supported maps. Please make sure map is installed first.
 
 =item Glasgow
 
+=item Hongkong
+
 =item Kazan
 
 =item Kharkiv
