@@ -1,5 +1,7 @@
 Revision history for Dancer2::Plugin::Map::Tube
 
+      - Add Map::Tube::Bielefeld.
+
 0.02  2018-04-22
       - Added key 'provides' to the Makefile.PL script.
 
